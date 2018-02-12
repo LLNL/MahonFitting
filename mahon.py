@@ -4,7 +4,7 @@ Written by Reto Trappitsch, trappitsch1@llnl.gov
 
 LLNL-CODE-745740 All rights reserved. This file is part of MahonFitting v1.0
 
-Please also read this link – Our Disclaimer (https://github.com/LLNL/MahonFitting/blob/master/DISCLAIMER) and
+Please also read this link - Our Disclaimer (https://github.com/LLNL/MahonFitting/blob/master/DISCLAIMER) and
 GNU General Public License (https://github.com/LLNL/MahonFitting/blob/master/LICENSE).
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -54,9 +54,6 @@ class Mahon:
         # set master size
         master.geometry("%dx%d+%d+%d" % winsize)
 
-        # correlation coefficient
-        self.p = 0
-
         # fixed intercept
         self.afx = None
 
@@ -76,9 +73,11 @@ class Mahon:
         # create variables for holding the data
         self.xdat, self.xunc = None, None
         self.ydat, self.yunc = None, None
+        self.p = None
         # create variables for holding the backup
-        self._xdata, self._xunc = None, None
-        self._ydata, self._yunc = None, None
+        self._xdat, self._xunc = None, None
+        self._ydat, self._yunc = None, None
+        self._p = None
 
         # make load general text and load csv file
         self.loadtxt_button = tk.Button(master, text='Load txt', command=self.loadtxt)
@@ -92,12 +91,17 @@ class Mahon:
         self.plot_button = tk.Button(master, text='Plot', command=self.plotdata)
         self.plot_button.place(x=self.x(3), y=self.y(1), width=BW, height=BH)
 
+        # fixme this needs to be replaced with a checkmark
         # correlation value
-        self.p_label = tk.Label(master, text='Correlation:')
-        self.p_label.place(x=self.x(2), y=self.y(2), width=BW, height=BH, anchor=tk.NW)
-        self.p_entry = tk.Entry(master)
-        self.p_entry.insert(tk.END, '0.0')
-        self.p_entry.place(x=self.x(3), y=self.y(2), width=BW, height=BH)
+        self.p_corr_var = tk.IntVar()
+        self.p_corr_box = tk.Checkbutton(master, text='Calculate with correlation values',
+                                         variable=self.p_corr_var)
+        self.p_corr_box.place(x=self.x(2), y=self.y(2), width=2*BW+pad, height=BH, anchor=tk.NW)
+        # self.p_label = tk.Label(master, text='Correlation:')
+        # self.p_label.place(x=self.x(2), y=self.y(2), width=BW, height=BH, anchor=tk.NW)
+        # self.p_entry = tk.Entry(master)
+        # self.p_entry.insert(tk.END, '0.0')
+        # self.p_entry.place(x=self.x(3), y=self.y(2), width=BW, height=BH)
 
         # how many sigma uncertainties are in the file?
         self.sig_label = tk.Label(master, text='Uncertainties:', justify=tk.LEFT)
@@ -169,7 +173,7 @@ class Mahon:
 
         # create data
         data = []
-        xdat, ydat, xunc, yunc = [], [], [], []
+        xdat, ydat, xunc, yunc, p = [], [], [], [], []
 
         for it in range(len(datain)):
             datain[it].replace('\r', '')
@@ -179,14 +183,34 @@ class Mahon:
                 data.append(datain[it].split(splitter))
 
         for it in range(len(data)):
-            if len(data[it]) >= 4:
-                xdat.append(float(data[it][0]))
-                xunc.append(float(data[it][1]))
-                ydat.append(float(data[it][2]))
-                yunc.append(float(data[it][3]))
-
+            if len(data[it]) == 4:
+                try:
+                    xdat.append(float(data[it][0]))
+                    xunc.append(float(data[it][1]))
+                    ydat.append(float(data[it][2]))
+                    yunc.append(float(data[it][3]))
+                    # append a zero for p
+                    p.append(0.)
+                except ValueError:
+                    # probably a header, not a number for sure
+                    continue
+            if len(data[it]) > 4:
+                self.p_corr_box.select()
+                try:
+                    xdat.append(float(data[it][0]))
+                    xunc.append(float(data[it][1]))
+                    ydat.append(float(data[it][2]))
+                    yunc.append(float(data[it][3]))
+                    if data[it][4] != '':
+                        p.append(float(data[it][4]))
+                    else:   # if no correlation is given but there is still more than 4 columns for some reason
+                        p.append(0.)
+                except ValueError:
+                    # probably a header, not a number for sure
+                    continue
         # create backup
         self._xdat, self._ydat, self._xunc, self._yunc = np.array(xdat), np.array(ydat), np.array(xunc), np.array(yunc)
+        self._p = p
 
     def loadtxt(self):
         fname = filedialog.askopenfilename()
@@ -214,12 +238,11 @@ class Mahon:
         self.xunc = np.array(self._xunc / self.sigvar.get())
         self.yunc = np.array(self._yunc / self.sigvar.get())
 
-        # get the correlation parameter that was typed in
-        try:
-            self.p = float(self.p_entry.get())
-        except ValueError:
-            messagebox.showerror('Error', 'Please enter a number for the correlation value.')
-            return
+        # get the correlation array if it was chosen, otherwise get None
+        if self.p_corr_var.get():
+            self.p = np.array(self._p)
+        else:
+            self.p = np.zeros(len(self._p))
 
         # clear entry
         self.a_text.delete(0, 'end')
@@ -372,7 +395,10 @@ class Mahon:
                   '1st column: x values\n' \
                   '2nd column: uncertainties of x values\n' \
                   '3rd column: y values\n' \
-                  '4th column: uncertainties of y values\n'
+                  '4th column: uncertainties of y values\n' \
+                  '5th column: Correlation value \n' \
+                  '   (optional: assumed 0 if not provided)\n\n' \
+                  'LLNL-CODE-745740\n'
         messagebox.showinfo(title='Help', message=hlp_txt)
 
     def quit_app(self):
@@ -394,7 +420,7 @@ class Mahon:
         yunc = self.yunc
 
         # run thorough the while loop
-        while np.abs(bold-bcalc) > 1.e-10:   # converges fast enough to work!
+        while np.abs((bold-bcalc) / bcalc) > 1.e-10:   # converges fast enough to work!
             # prep for while loop, start before this line and compare bold to bcalc
             bold = bcalc
             # calculate xbar and ybar
@@ -402,7 +428,7 @@ class Mahon:
             ybar = 0
             weightsum = 0
             for it in range(len(xdat)):
-                wi = self.calc_wi(xunc[it], yunc[it], bcalc)
+                wi = self.calc_wi(xunc[it], yunc[it], bcalc, self.p[it])
                 xbar += xdat[it] * wi
                 ybar += ydat[it] * wi
                 weightsum += wi
@@ -418,12 +444,13 @@ class Mahon:
                 yi = ydat[it]
                 sxi = xunc[it]
                 syi = yunc[it]
-                wi = self.calc_wi(sxi, syi, bcalc)
+                pit = self.p[it]
+                wi = self.calc_wi(sxi, syi, bcalc, pit)
                 ui = xi - xbar
                 vi = yi - ybar
                 # add to sums
-                btop += wi**2. * vi * (ui * syi**2. + bcalc * vi * sxi**2. - self.p * vi * sxi * syi)
-                bbot += wi**2. * ui * (ui * syi**2. + bcalc * vi * sxi**2. - bcalc * self.p * ui * sxi * syi)
+                btop += wi**2. * vi * (ui * syi**2. + bcalc * vi * sxi**2. - pit * vi * sxi * syi)
+                bbot += wi**2. * ui * (ui * syi**2. + bcalc * vi * sxi**2. - bcalc * pit * ui * sxi * syi)
 
             # new bcalc
             bcalc = btop / bbot
@@ -476,10 +503,11 @@ class Mahon:
             yi = ydat[it]
             sxi = xunc[it]
             syi = yunc[it]
-            wi = self.calc_wi(xunc[it], yunc[it], b)
+            pit = self.p[it]
+            wi = self.calc_wi(xunc[it], yunc[it], b, pit)
             ui = xi - xbar
             vi = yi - ybar
-            sxyi = self.p * sxi * syi
+            sxyi = pit * sxi * syi
             sum1 += wi**2. * (2 * b * (ui * vi * sxi**2. - ui**2. * sxyi) + (ui**2. * syi**2. - vi**2 * sxi**2.))
             sum2 += wi**3. * (sxyi - b * sxi**2.) * (b**2. * (ui * vi * sxi**2 - ui**2 * sxyi) +
                                                      b * (ui**2 * syi**2 - vi**2 * sxi**2) -
@@ -489,7 +517,7 @@ class Mahon:
         # calculate the sum of all weights
         wksum = 0.
         for it in range(len(xdat)):
-            wksum += self.calc_wi(xunc[it], yunc[it], b)
+            wksum += self.calc_wi(xunc[it], yunc[it], b, self.p[it])
 
         # now calculate sigasq and sigbsq
         sigasq = 0.
@@ -497,8 +525,9 @@ class Mahon:
         for it in range(len(xdat)):
             sxi = xunc[it]
             syi = yunc[it]
-            wi = self.calc_wi(sxi, syi, b)
-            sxyi = self.p * sxi * syi
+            pit = self.p[it]
+            wi = self.calc_wi(sxi, syi, b, pit)
+            sxyi = pit * sxi * syi
 
             # calculate dell theta / dell xi and dell theta / dell yi
             dthdxi = 0.
@@ -508,10 +537,13 @@ class Mahon:
                 yj = ydat[jt]
                 sxj = xunc[jt]
                 syj = yunc[jt]
-                wj = self.calc_wi(sxj, syj, b)
+                pjt = self.p[jt]
+                # todo check if pjt is correct here
+                wj = self.calc_wi(sxj, syj, b, pjt)
                 uj = xj - xbar
                 vj = yj - ybar
-                sxyj = self.p * sxj * syj
+                # todo check if pjt is correct here!
+                sxyj = pjt * sxj * syj
                 # add to dthdxi and dthdyi
                 dthdxi += wj**2. * (kron(it, jt) - wi / wksum) * (b**2 * (vj * sxj**2 - 2 * uj * sxyj) +
                                                                   2 * b * uj * syj**2 - vj * syj**2)
@@ -545,15 +577,16 @@ class Mahon:
             yi = ydat[it]
             sxi = xunc[it]
             syi = yunc[it]
-            wi = self.calc_wi(sxi, syi, self.slope)
+            pit = self.p[it]
+            wi = self.calc_wi(sxi, syi, self.slope, pit)
             mswd += wi * (yi - self.slope * xi - self.yinter)**2.
 
         # now divide by degrees of freedom minus 2, since 2 fixed parameters
         mswd /= (len(xdat) - 2.)
         self.mswd = mswd
 
-    def calc_wi(self, sx, sy, b):
-        return 1. / (sy**2 + b**2 * sx**2 - 2 * b * self.p * sx * sy)
+    def calc_wi(self, sx, sy, b, p):
+        return 1. / (sy**2 + b**2 * sx**2 - 2 * b * p * sx * sy)
 
 
 def kron(i, j):
