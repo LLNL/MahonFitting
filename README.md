@@ -1,5 +1,5 @@
 # MahonFitting v1.0
-<img src="https://raw.githubusercontent.com/trappitsch/MahonFitting/master/icon/fitico.png?token=AKKyQI8F3m2egXde2bbREh4UHeIYhwH7ks5affc6wA%3D%3D" width="128" height="128">
+<img src="./icon/fitico.png?token=AKKyQI8F3m2egXde2bbREh4UHeIYhwH7ks5affc6wA%3D%3D" width="128" height="128">
 
 <!--toc-->
 
@@ -105,6 +105,14 @@ York D. (1969) Least squares fitting of a straight line with correlated errors, 
 Trappitsch R., Boehnke P., Stephan T., Telus M., Savina M. R., Pardo O., Davis A. M., Dauphas N., Pellin M. J., adn Huss G. (2018) New Constraints for the Low Abundance of <sup>60</sup>Fe in the Early Solar System, *The Astrophysical Journal Letters*, in prep.
 
 ## Release
-Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory. Written by Reto Trappitsch <trappitsch1@llnl.gov>LLNL-CODE-745740 All rights reserved. This file is part of MahonFitting v1.0Please also read this link – Our [Disclaimer](https://github.com/LLNL/MahonFitting/blob/master/DISCLAIMER) and [GNU General Public License](https://github.com/LLNL/MahonFitting/blob/master/LICENSE).This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License (as published by the Free Software Foundation) version 2, dated June 1991.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+Copyright (c) 2018, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory. Written by Reto Trappitsch <trappitsch1@llnl.gov>
+
+LLNL-CODE-745740 All rights reserved. This file is part of MahonFitting v1.0
+
+Please also read this link – Our [Disclaimer](https://github.com/LLNL/MahonFitting/blob/master/DISCLAIMER) and [GNU General Public License](https://github.com/LLNL/MahonFitting/blob/master/LICENSE).
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License (as published by the Free Software Foundation) version 2, dated June 1991.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
