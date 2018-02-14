@@ -91,17 +91,11 @@ class Mahon:
         self.plot_button = tk.Button(master, text='Plot', command=self.plotdata)
         self.plot_button.place(x=self.x(3), y=self.y(1), width=BW, height=BH)
 
-        # fixme this needs to be replaced with a checkmark
         # correlation value
         self.p_corr_var = tk.IntVar()
         self.p_corr_box = tk.Checkbutton(master, text='Calculate with correlation values',
                                          variable=self.p_corr_var)
         self.p_corr_box.place(x=self.x(2), y=self.y(2), width=2*BW+pad, height=BH, anchor=tk.NW)
-        # self.p_label = tk.Label(master, text='Correlation:')
-        # self.p_label.place(x=self.x(2), y=self.y(2), width=BW, height=BH, anchor=tk.NW)
-        # self.p_entry = tk.Entry(master)
-        # self.p_entry.insert(tk.END, '0.0')
-        # self.p_entry.place(x=self.x(3), y=self.y(2), width=BW, height=BH)
 
         # how many sigma uncertainties are in the file?
         self.sig_label = tk.Label(master, text='Uncertainties:', justify=tk.LEFT)
@@ -262,6 +256,7 @@ class Mahon:
             ydat = np.zeros(len(self.ydat) + 1)
             xunc = np.zeros(len(self.xunc) + 1)
             yunc = np.zeros(len(self.yunc) + 1)
+            p = np.zeros(len(self.p) + 1)
             # find the minimum error to add
             errintercept = np.min(np.array([np.min(self.xunc), np.min(self.yunc)])) / 1.e18
             # now add the point to the new array and then add all the existing data
@@ -269,16 +264,19 @@ class Mahon:
             ydat[0] = self.afx
             xunc[0] = errintercept
             yunc[0] = errintercept
+            p[0] = 0.
             for it in range(len(self.xdat)):
                 xdat[it+1] = self.xdat[it]
                 ydat[it+1] = self.ydat[it]
                 xunc[it+1] = self.xunc[it]
                 yunc[it+1] = self.yunc[it]
+                p[it+1] = self.p[it]
             # now write back
             self.xdat = xdat
             self.ydat = ydat
             self.xunc = xunc
             self.yunc = yunc
+            self.p = p
             # now calculate
             self.calcparams()
             self.calcunc()
@@ -310,12 +308,18 @@ class Mahon:
         f = open(outname, 'w')
         f.writelines('All uncertainties are ' + str(self.sigvar.get()) + ' sigma!\n')
         # write header
-        f.writelines('Input data\nxdata\txdata_unc\tydata\tydata_unc\n')
+        f.writelines('Input data\nxdata\txdata_unc\tydata\tydata_unc\tCorrelation_values\n')
         for it in range(len(self._xdat)):
             f.writelines(str(self._xdat[it]) + '\t' + str(float(self.sigvar.get()) * self._xunc[it]) + '\t' +
-                         str(self._ydat[it]) + '\t' + str(float(self.sigvar.get()) * self._yunc[it]) + '\n')
+                         str(self._ydat[it]) + '\t' + str(float(self.sigvar.get()) * self._yunc[it]) + '\t' +
+                         str(self._p[it]) + '\n')
         # now write the slope and stuff out
         f.writelines('\nLinear Regression after Mahon (1996):\n=====================================\n\n')
+        # used correlation values or not?
+        if self.p_corr_var.get():
+            f.writelines('Regression calculation considering the correlation values\n')
+        else:
+            f.writelines('Regression calculation without considering the correlation values\n')
         # parameters
         slopestring = '%1.6e +/- %1.6e' % (self.slope, float(self.sigvar.get()) * self.slopeunc)
         if self.force_int_var.get():
@@ -420,7 +424,10 @@ class Mahon:
         yunc = self.yunc
 
         # run thorough the while loop
-        while np.abs((bold-bcalc) / bcalc) > 1.e-10:   # converges fast enough to work!
+        whilecounter = 0
+        whilecountermax = 1e5
+        while np.abs((bold-bcalc) / bcalc) > 1.e-10 and whilecounter < whilecountermax:
+            whilecounter += 1
             # prep for while loop, start before this line and compare bold to bcalc
             bold = bcalc
             # calculate xbar and ybar
@@ -454,6 +461,14 @@ class Mahon:
 
             # new bcalc
             bcalc = btop / bbot
+
+        # error message if whilecounter timed out
+        if whilecounter == whilecountermax:
+            messagebox.showwarning('Convergence warning', 'Warning! Your calculation might not have converged ' +
+                                                          'properly. The difference between the last calculated '
+                                                          'slope  and the current slope is: ' +
+                                                          str(np.abs((bold-bcalc) / bcalc)) + ' You can ignore this ' +
+                                                          'Message if this is an acceptable convergence for you.')
 
         # now that slope is determined, calculate the y intercept
         self.yinter = ybar - bcalc * xbar
@@ -538,11 +553,9 @@ class Mahon:
                 sxj = xunc[jt]
                 syj = yunc[jt]
                 pjt = self.p[jt]
-                # todo check if pjt is correct here
                 wj = self.calc_wi(sxj, syj, b, pjt)
                 uj = xj - xbar
                 vj = yj - ybar
-                # todo check if pjt is correct here!
                 sxyj = pjt * sxj * syj
                 # add to dthdxi and dthdyi
                 dthdxi += wj**2. * (kron(it, jt) - wi / wksum) * (b**2 * (vj * sxj**2 - 2 * uj * sxyj) +
