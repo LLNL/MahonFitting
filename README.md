@@ -11,16 +11,14 @@ This routine performs linear regressions to a set of measurement that have uncer
 ### Preparing your data set
 The fitting program can read text files and csv files. The general format of your file has to be:
 
-Column 1 | Column 2                  | Column 3 | Column 4                 |
----------|---------------------------|----------|--------------------------|
-x values | uncertainties of x values	| y values | uncertainties of y values |
+Column 1 | Column 2                  | Column 3 | Column 4                 | Column 5 (optional)|
+---------|---------------------------|----------|--------------------------|----------
+x values | uncertainties of x values	| y values | uncertainties of y values | Correlation values
 
-For text files you can seperate the individual values with a space or a tab, for csv values with a comma. There has to be a line break to separate between different datapoints.
-
-**Please to not use a header in your datafile!**
-
+For text files you can seperate the individual values with a space or a tab, for csv values with a comma. There has to be a line break to separate between different datapoints.  
+The correlation value column (Column 5) is optional. If you do not provide a fifth column, correlation values are assumed to be 0.  
+If you would like to have a header column, the first entry of that column has to start with a # (as a comment line).  
 The testfiles that are provided are the files that come from the dataset published in Mahon (1996) and can be used for validation.
-
 ### Running a regression
 If you want to calculate a regression, please follow this procedure. We assume you have prepared a file *data.txt* that is prepared as described above.
 
@@ -32,7 +30,22 @@ If you want to calculate a regression, please follow this procedure. We assume y
 If you would like to see your data along with the regression in a quick plot hit the *Plot* button. This gives you a rough overview. if you would like you can save the plot using the button at the bottom.
 
 ### Using a fixed intercept
-If you want fix the y-axis intercept, click the check box and type in the intercept value that you want to fix. The software then artificially adds another datapoint to the regression with the *(x, y)* values *(0, f0)*, where *f0* is the typed in intercept. The uncertainties for the intercept are chosen such that they are 10<sup>12</sup> times lower than the smallest uncertainty in your dataset. 
+If you want fix the y-axis intercept, click the check box and type in the intercept value that you want to fix. The software then artificially adds another datapoint to the regression with the *(x, y)* values *(0, f0)*, where *f0* is the typed in intercept. The uncertainties for the intercept are chosen such that they are 10<sup>12</sup> times lower than the smallest uncertainty in your dataset.
+
+### Output File
+If you run a regression, the program will automatically write an output file. If our input file is named *test.txt*, your output file will be named *test_out.txt*. Old output files are overwritten without asking. The output file will contain the following:
+
+* A statment delcaring if you selected 1&sigma; or 2&sigma; uncertainties
+* A list of your inputs
+* A statment declaring if the regression was calculated with or without correlated values
+* The regression output:
+  * Slope
+  * Y-Intercept
+  * X-Intercept
+  * MSWD
+
+### Problems
+Since the slope of the regression is calculated iteratively (see equation (9) in Mahon, 1996), there is a chance that the iterative process does not converge. In this case, the python routine stops after 10<sup>6</sup> iterations and will give you an error message such that you can see how well it converged and decide for yourself if it is acceptable or not. Please also have a look at the regression and see if it looks reasonable, check if the configuration that you want to have regressed is reasonable. If the problem consists, you find another problem, or have problems using this software, feel free to contact me.
 
 
 ## Pre-compiled packages

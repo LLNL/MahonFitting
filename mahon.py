@@ -178,30 +178,38 @@ class Mahon:
 
         for it in range(len(data)):
             if len(data[it]) == 4:
-                try:
-                    xdat.append(float(data[it][0]))
-                    xunc.append(float(data[it][1]))
-                    ydat.append(float(data[it][2]))
-                    yunc.append(float(data[it][3]))
-                    # append a zero for p
-                    p.append(0.)
-                except ValueError:
-                    # probably a header, not a number for sure
-                    continue
-            if len(data[it]) > 4:
-                self.p_corr_box.select()
-                try:
-                    xdat.append(float(data[it][0]))
-                    xunc.append(float(data[it][1]))
-                    ydat.append(float(data[it][2]))
-                    yunc.append(float(data[it][3]))
-                    if data[it][4] != '':
-                        p.append(float(data[it][4]))
-                    else:   # if no correlation is given but there is still more than 4 columns for some reason
+                # catch header issues
+                if data[it][0][0] == '#':
+                    pass
+                else:
+                    try:
+                        xdat.append(float(data[it][0]))
+                        xunc.append(float(data[it][1]))
+                        ydat.append(float(data[it][2]))
+                        yunc.append(float(data[it][3]))
+                        # append a zero for p
                         p.append(0.)
-                except ValueError:
-                    # probably a header, not a number for sure
-                    continue
+                    except ValueError:
+                        # probably a header, not a number for sure
+                        continue
+            if len(data[it]) > 4:
+                # catch header issues
+                if data[it][0][0] == '#':
+                    pass
+                else:
+                    self.p_corr_box.select()
+                    try:
+                        xdat.append(float(data[it][0]))
+                        xunc.append(float(data[it][1]))
+                        ydat.append(float(data[it][2]))
+                        yunc.append(float(data[it][3]))
+                        if data[it][4] != '':
+                            p.append(float(data[it][4]))
+                        else:   # if no correlation is given but there is still more than 4 columns for some reason
+                            p.append(0.)
+                    except ValueError:
+                        # probably a header, not a number for sure
+                        continue
         # create backup
         self._xdat, self._ydat, self._xunc, self._yunc = np.array(xdat), np.array(ydat), np.array(xunc), np.array(yunc)
         self._p = p
