@@ -8,3 +8,5 @@
 .idea/workspace.xml
 
 *.spec
+
+testdata_out.txt
