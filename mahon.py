@@ -230,7 +230,7 @@ class Mahon:
     def loadtxt(self):
         options = dict()
         options['defaultextension'] = '.txt'
-        options['filetypes'] = [('all files', '.*'), ('txt files', '.txt')]
+        options['filetypes'] = [('txt files', '.txt'), ('all files', '.*')]
         fname = filedialog.askopenfilename(**options)
         if fname == '':
             return
@@ -239,7 +239,7 @@ class Mahon:
     def loadcsv(self):
         options = dict()
         options['defaultextension'] = '.csv'
-        options['filetypes'] = [('all files', '.*'), ('csv files', '.csv')]
+        options['filetypes'] = [('csv files', '.csv'), ('all files', '.*')]
         fname = filedialog.askopenfilename(**options)
         if fname == '':
             return
