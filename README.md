@@ -19,6 +19,7 @@ For text files you can seperate the individual values with a space or a tab, for
 The correlation value column (Column 5) is optional. If you do not provide a fifth column, correlation values are assumed to be 0.  
 If you would like to have a header column, the first entry of that column has to start with a # (as a comment line).  
 The testfiles that are provided are the files that come from the dataset published in Mahon (1996) and can be used for validation.
+**Important: Do not use UTF-8 encoding when exporting your data to .txt or .csv**
 ### Running a regression
 If you want to calculate a regression, please follow this procedure. We assume you have prepared a file *data.txt* that is prepared as described above.
 

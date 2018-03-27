@@ -159,8 +159,18 @@ class Mahon:
 
     def loadfile(self, fname, splitter=None):
         f = open(fname, 'r')
-        datain = f.read().split('\n')
+        datain = []
+        for line in f:
+            datain.append(line)
         f.close()
+
+        # check for mac file format as exported from excel
+        if len(datain) == 1:
+            tmp = []
+            datsplit = datain[0].split('\r')
+            for it in range(len(datsplit)):
+                tmp.append(datsplit[it])
+            datain = tmp
 
         # put filename into self
         self.fname = fname
@@ -170,7 +180,9 @@ class Mahon:
         xdat, ydat, xunc, yunc, p = [], [], [], [], []
 
         for it in range(len(datain)):
-            datain[it].replace('\r', '')
+            # strip newline characters
+            datain[it].strip()
+            datain[it].rstrip()
             if splitter is None:
                 data.append(datain[it].split())
             else:
@@ -210,12 +222,16 @@ class Mahon:
                     except ValueError:
                         # probably a header, not a number for sure
                         continue
+
         # create backup
         self._xdat, self._ydat, self._xunc, self._yunc = np.array(xdat), np.array(ydat), np.array(xunc), np.array(yunc)
         self._p = p
 
     def loadtxt(self):
-        fname = filedialog.askopenfilename()
+        options = dict()
+        options['defaultextension'] = '.txt'
+        options['filetypes'] = [('all files', '.*'), ('txt files', '.txt')]
+        fname = filedialog.askopenfilename(**options)
         if fname == '':
             return
         self.loadfile(fname)
@@ -349,6 +365,33 @@ class Mahon:
         f.close()
 
     def plotdata(self):
+        # subroutines for plotting function
+        def xzeroplt():
+            # x axis
+            if defaultxlim[0] < 0. < defaultxlim[1]:
+                a.set_xlim(defaultxlim)
+            elif defaultxlim[0] > 0.:
+                a.set_xlim([0., defaultxlim[1]])
+            else:
+                a.set_xlim([defaultxlim[0], 0.])
+
+            # y axis
+            if defaultylim[0] < self.yinter:
+                minylim = defaultylim[0]
+            else:
+                minylim = self.yinter
+            if defaultylim[1] > self.yinter:
+                maxylim = defaultylim[1]
+            else:
+                maxylim = self.yinter
+            a.set_ylim([minylim, maxylim])
+            canvas.show()
+
+        def resetxlim():
+            a.set_xlim(defaultxlim)
+            a.set_ylim(defaultylim)
+            canvas.show()
+
         # check if input available
         if self.xdat is None or self.ydat is None or self.xunc is None or self.yunc is None:
             messagebox.showerror('Error', 'No input data loaded')
@@ -365,14 +408,28 @@ class Mahon:
 
         a.errorbar(xdat, ydat, xerr=xunc, yerr=yunc, fmt='o', color='b', mfc='b', capsize=0, markersize=9)
 
-        # find min max in x and y
-        xlims = np.array([np.min(xdat - xunc), np.max(xdat + xunc)])
+
+        # default limits
+        defaultxlim = a.get_xlim()
+        defaultylim = a.get_ylim()
+
+        # find min max in x and y, if x < 0
+        if np.min(xdat - xunc) < 0 < np.max(xdat + xunc):
+            xlims = np.array([np.min(xdat - xunc), np.max(xdat + xunc)])
+        elif np.min(xdat - xunc) > 0:
+            xlims = np.array([0., np.max(xdat + xunc)])
+        else:
+            xlims = np.array([np.min(xdat-xunc), 0.])
 
         # calculate fitline
         regy = self.slope * xlims + self.yinter
 
         # draw the fit line through the plot
         a.plot(xlims, regy, '-', linewidth=2, color='k')
+
+        # set default limits
+        a.set_xlim(defaultxlim)
+        a.set_ylim(defaultylim)
 
         # put the parameters in the title:
         slopestring = '%1.3e +/- %1.3e' % (self.slope, float(self.sigvar.get()) * self.slopeunc)
@@ -391,6 +448,9 @@ class Mahon:
         toolbar = NavigationToolbar2TkAgg(canvas, pltwin)
         toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        # linlog toggle control
+        tk.Button(pltwin, text='Plot to x=0', command=xzeroplt).pack(side=tk.LEFT)
+        tk.Button(pltwin, text='Reset x limits', command=resetxlim).pack(side=tk.LEFT)
 
     def get_help(self):
         hlp_txt = 'This program makes a linear regression including errors in x and y ' \
